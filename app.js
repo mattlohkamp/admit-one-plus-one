@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const flash = require('connect-flash');
@@ -45,21 +46,12 @@ async function testSupabaseConnection() {
 
 testSupabaseConnection();
 
-// Security middleware
-app.use(helmet());
-app.use(cookieParser());
-app.use(csrf({ cookie: true }));
-
-// Rate limiting
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100
-});
-app.use(limiter);
-
-// Middleware
+// Basic middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(cookieParser());
+
+// Session middleware
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key-here',
     resave: false,
@@ -70,7 +62,20 @@ app.use(session({
         sameSite: 'strict'
     }
 }));
+
+// Flash middleware (must come after session)
 app.use(flash());
+
+// Security middleware
+app.use(helmet());
+app.use(csrf({ cookie: true }));
+
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100
+});
+app.use(limiter);
 
 // Set EJS as the view engine
 app.set('view engine', 'ejs');
@@ -112,7 +117,8 @@ app.post('/rsvp', validateRSVP, async (req, res) => {
             .from('rsvps')
             .insert([
                 { email, guest_name: guest_name || null }
-            ]);
+            ])
+            .select();
             
         if (error) {
             console.error('Supabase insert error:', error);
