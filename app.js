@@ -14,7 +14,36 @@ const port = process.env.PORT || 3000;
 // Supabase setup
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+    console.error('Missing Supabase environment variables!');
+    process.exit(1);
+}
+
+console.log('Initializing Supabase client...');
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Test Supabase connection
+async function testSupabaseConnection() {
+    try {
+        const { data, error } = await supabase
+            .from('rsvps')
+            .select('count')
+            .limit(1);
+            
+        if (error) {
+            console.error('Supabase connection test failed:', error);
+            process.exit(1);
+        }
+        
+        console.log('Successfully connected to Supabase!');
+    } catch (err) {
+        console.error('Error testing Supabase connection:', err);
+        process.exit(1);
+    }
+}
+
+testSupabaseConnection();
 
 // Security middleware
 app.use(helmet());
@@ -77,17 +106,23 @@ app.post('/rsvp', validateRSVP, async (req, res) => {
     const { email, guest_name } = req.body;
     
     try {
+        console.log('Attempting to insert RSVP:', { email, guest_name });
+        
         const { data, error } = await supabase
             .from('rsvps')
             .insert([
                 { email, guest_name: guest_name || null }
             ]);
             
-        if (error) throw error;
+        if (error) {
+            console.error('Supabase insert error:', error);
+            throw error;
+        }
         
+        console.log('Successfully inserted RSVP:', data);
         req.flash('message', 'Thank you for your RSVP!');
     } catch (err) {
-        console.error('Error inserting RSVP:', err);
+        console.error('Error in RSVP submission:', err);
         req.flash('message', 'An error occurred. Please try again.');
     }
     
