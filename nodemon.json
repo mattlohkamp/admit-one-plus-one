@@ -1,0 +1,10 @@
+{
+    "watch": ["app.js", "views/*.ejs"],
+    "ext": "js,ejs",
+    "ignore": ["node_modules/"],
+    "verbose": true,
+    "env": {
+        "NODE_ENV": "development"
+    },
+    "delay": "100"
+}
