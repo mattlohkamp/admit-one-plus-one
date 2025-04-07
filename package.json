@@ -1,5 +1,5 @@
 {
-    "name": "rsvp-app",
+    "name": "admit-one-plus-one",
     "version": "1.0.0",
     "description": "Simple RSVP web application",
     "main": "app.js",
