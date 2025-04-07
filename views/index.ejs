@@ -4,7 +4,9 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Event RSVP</title>
+	<title>RSVP to Matt and Skwerl's Wedding!</title>
+	<link rel="icon"
+		href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💍</text></svg>">
 	<style>
 		body {
 			font-family: Arial, sans-serif;
@@ -12,10 +14,118 @@
 			margin: 0 auto;
 			padding: 20px;
 			line-height: 1.6;
+			background: repeating-conic-gradient(from 0deg,
+					#FF6B00 0deg 2deg,
+					#ffffff 2deg 4deg);
+			background-size: 100vw 100vh;
+			background-attachment: fixed;
+			background-position: center;
+			position: relative;
+			min-height: 100vh;
+		}
+
+		body::before {
+			content: '';
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: rgba(255, 255, 255, 0.9);
+			z-index: -1;
+		}
+
+		.event-details {
+			background-color: #f8f9fa;
+			padding: 20px;
+			border-radius: 8px;
+			margin-bottom: 30px;
+			position: relative;
+			z-index: 1;
+		}
+
+		.event-details h1 {
+			text-align: center;
+			margin-top: 0;
+			margin-bottom: 20px;
+			font-size: 2.5em;
+		}
+
+		.event-details h1 .matt {
+			color: #FF6B00;
+		}
+
+		.event-details h1 .skwerl {
+			color: #6B46C1;
+		}
+
+		.event-details h2 {
+			color: #1a237e;
+			margin-top: 0;
+			padding-bottom: 10px;
+			border-bottom: 2px solid #1a237e;
+		}
+
+		.detail-block {
+			margin-bottom: 20px;
+		}
+
+		.detail-block h3 {
+			color: #1a237e;
+			margin-bottom: 10px;
+		}
+
+		.detail-block p {
+			margin: 0;
+			color: #555;
+		}
+
+		.venue-address {
+			background-color: #fff;
+			padding: 15px;
+			border-radius: 4px;
+			border-left: 4px solid #1a237e;
+			margin-bottom: 15px;
+		}
+
+		.venue-map {
+			width: 100%;
+			height: 300px;
+			border: none;
+			border-radius: 4px;
+			margin-top: 10px;
+		}
+
+		.rsvp-section {
+			background-color: #fff;
+			padding: 20px;
+			border-radius: 8px;
+			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		}
+
+		.form-list {
+			list-style: none;
+			padding: 0;
+			margin: 0;
 		}
 
 		.form-group {
 			margin-bottom: 20px;
+			list-style: none;
+			padding: 0;
+		}
+
+		.form-row {
+			display: flex;
+			gap: 20px;
+			margin-bottom: 20px;
+			list-style: none;
+			padding: 0;
+		}
+
+		.form-row .form-group {
+			flex: 1;
+			margin-bottom: 0;
 		}
 
 		label {
@@ -25,7 +135,9 @@
 		}
 
 		input[type="email"],
-		input[type="text"] {
+		input[type="text"],
+		input[type="tel"],
+		textarea {
 			width: 100%;
 			padding: 8px;
 			border: 1px solid #ddd;
@@ -33,53 +145,182 @@
 			box-sizing: border-box;
 		}
 
+		textarea {
+			min-height: 100px;
+			resize: vertical;
+		}
+
 		button {
-			background-color: #4CAF50;
+			background-color: #1a237e;
 			color: white;
 			padding: 10px 20px;
 			border: none;
 			border-radius: 4px;
 			cursor: pointer;
+			margin-left: auto;
+			display: block;
 		}
 
 		button:hover {
-			background-color: #45a049;
+			background-color: #0d1b6b;
 		}
 
 		.flash-message {
 			padding: 10px;
 			margin-bottom: 20px;
 			border-radius: 4px;
+		}
+
+		.flash-message.error {
+			background-color: #f8d7da;
+			color: #721c24;
+			border: 1px solid #f5c6cb;
+		}
+
+		.flash-message.success {
 			background-color: #dff0d8;
 			color: #3c763d;
+			border: 1px solid #d6e9c6;
+		}
+
+		.required::after {
+			content: " *";
+			color: red;
+		}
+
+		@media (max-width: 600px) {
+			.form-row {
+				flex-direction: column;
+				gap: 0;
+			}
+		}
+
+		.itinerary-list {
+			list-style: none;
+			padding: 0;
+			margin: 0;
+		}
+
+		.itinerary-list li {
+			position: relative;
+			padding-left: 90px;
+			margin-bottom: 10px;
+			color: #555;
+		}
+
+		.itinerary-list li::before {
+			content: attr(value);
+			position: absolute;
+			left: 0;
+			width: 10ch;
+			color: #1a237e;
+			font-weight: bold;
+			white-space: nowrap;
 		}
 	</style>
 </head>
 
 <body>
-	<h1>Event RSVP</h1>
+	<div class="event-details">
+		<h1><span class="matt">Matt</span> 💍 <span class="skwerl">Skwerl</span></h1>
 
-	<% if (messages && messages.length> 0) { %>
-		<div class="flash-message">
-			<%= messages[0] %>
+		<div class="detail-block">
+			<h2>What is going on?</h2>
+			<p>We are getting married!</p>
 		</div>
-		<% } %>
 
-			<form method="POST" action="/rsvp">
-				<input type="hidden" name="_csrf" value="<%= csrfToken %>">
+		<div class="detail-block">
+			<h2>When is it happening?</h2>
+			<ol class="itinerary-list">
+				<li value="3:00&nbsp;PM">Gates Open - Welcome!</li>
+				<li value="4:00&nbsp;PM">Marriage Ceremony</li>
+				<li value="5:00&nbsp;PM">Reception, Dinner and Drinks</li>
+				<li value="6:00&nbsp;PM">Party time!</li>
+				<li value="10:00&nbsp;PM">The End - You don't have to go home, but you can't stay here!</li>
+			</ol>
+		</div>
 
-				<div class="form-group">
-					<label for="email">Email Address *</label>
-					<input type="email" id="email" name="email" required>
-				</div>
+		<div class="detail-block">
+			<h2>How is this going down?</h2>
+			<ul>
+				<li>Please RSVP!!</li>
+				<li>This is a party for adult humans only - no children or pets, please.</li>
+				<li>Dress code: As formal as you're feeling - anything from basic black to circus stripes!</li>
+				<li>Food &amp; drinks will be provided.</li>
+				<li>Take lots of pictures to share!</li>
+			</ul>
+		</div>
 
-				<div class="form-group">
-					<label for="guest_name">Guest Name (Optional)</label>
-					<input type="text" id="guest_name" name="guest_name">
-				</div>
+		<div class="detail-block">
+			<h2>Where will it be?</h2>
+			<div class="venue-address">
+				<p><strong>The Shire</strong> (Kevin and Rachel's)<br />
+					821 Snowden Rd<br />
+					White Salmon, WA 98672</p>
+			</div>
+			<iframe
+				src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2782.2773522567204!2d-121.4251829231866!3d45.78567097108101!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x54961386659c2631%3A0x2b76d76096756485!2s821%20Snowden%20Rd%2C%20White%20Salmon%2C%20WA%2098672!5e0!3m2!1sen!2sus!4v1744059113147!5m2!1sen!2sus"
+				class="venue-map" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+		</div>
+	</div>
 
-				<button type="submit">Submit RSVP</button>
-			</form>
+	<div class="rsvp-section">
+		<h2>Who is coming?</h2>
+
+		<% if (messages && messages.length> 0) { %>
+			<div class="flash-message <%= messages[0].includes('error') ? 'error' : 'success' %>" id="flash-message">
+				<%= messages[0] %>
+			</div>
+			<% } %>
+
+				<form method="POST" action="/rsvp" id="rsvp-form">
+					<input type="hidden" name="_csrf" value="<%= csrfToken %>">
+					<ol class="form-list">
+
+						<li class="form-row">
+							<div class="form-group">
+								<label for="primary_guest_name" class="required">Who Are You?</label>
+								<input type="text" id="primary_guest_name" name="primary_guest_name" required>
+							</div>
+
+							<div class="form-group">
+								<label for="secondary_guest_name">Who is your plus one?</label>
+								<input type="text" id="secondary_guest_name" name="secondary_guest_name">
+							</div>
+						</li>
+
+						<li class="form-group">
+							<label for="additional_info">Anything else we should know?</label>
+							<textarea id="additional_info" name="additional_info"
+								placeholder="Dietary restrictions, accessibility needs, or any other information you'd like to share"></textarea>
+						</li>
+
+						<li class="form-row">
+							<div class="form-group">
+								<label for="email" class="required">Email Address</label>
+								<input type="email" id="email" name="email" required>
+							</div>
+
+							<div class="form-group">
+								<label for="phone">Phone Number</label>
+								<input type="tel" id="phone" name="phone" placeholder="(555) 555-5555">
+							</div>
+						</li>
+
+					</ol>
+
+					<button type="submit">Submit RSVP</button>
+				</form>
+	</div>
+
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			const flashMessage = document.getElementById('flash-message');
+			if (flashMessage) {
+				flashMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			}
+		});
+	</script>
 </body>
 
 </html>
