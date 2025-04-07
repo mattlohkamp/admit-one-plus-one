@@ -1,11 +1,11 @@
 services:
-  - type: web
-    name: rsvp-app
-    env: node
-    buildCommand: npm install
-    startCommand: npm start
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: SESSION_SECRET
-        generateValue: true
+    - type: web
+      name: admit-one-plus-one
+      env: node
+      buildCommand: npm install
+      startCommand: npm start
+      envVars:
+          - key: NODE_ENV
+            value: production
+          - key: SESSION_SECRET
+            generateValue: true
