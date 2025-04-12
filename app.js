@@ -71,21 +71,21 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://maps.googleapis.com", "https://www.google.com"],
             styleSrc: ["'self'", "'unsafe-inline'"],
             imgSrc: ["'self'", "data:", "https:", "https://maps.googleapis.com", "https://maps.gstatic.com"],
             connectSrc: ["'self'", "https://maps.googleapis.com"],
             fontSrc: ["'self'"],
             objectSrc: ["'none'"],
             mediaSrc: ["'self'"],
-            frameSrc: ["'self'", "https://www.google.com"],
+            frameSrc: ["'self'", "https://www.google.com", "https://maps.google.com"],
             frameAncestors: ["'none'"],
             upgradeInsecureRequests: []
         }
     },
-    crossOriginEmbedderPolicy: true,
-    crossOriginOpenerPolicy: true,
-    crossOriginResourcePolicy: { policy: "same-site" }
+    crossOriginEmbedderPolicy: false,
+    crossOriginOpenerPolicy: { policy: "same-origin" },
+    crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 app.use(csrf({ cookie: true }));
 
@@ -96,19 +96,6 @@ const limiter = rateLimit({
     message: 'Too many RSVP attempts from this IP, please try again later'
 });
 
-// Set EJS as the view engine
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-
-// Routes
-app.get('/', (req, res) => {
-    const messages = req.flash('message');
-    res.render('index', { 
-        messages,
-        csrfToken: req.csrfToken()
-    });
-});
-
 // Input validation middleware
 const validateRSVP = (req, res, next) => {
     const { email, phone, primary_guest_name, secondary_guest_name, additional_info } = req.body;
@@ -116,20 +103,29 @@ const validateRSVP = (req, res, next) => {
     // Email validation
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!email || !emailRegex.test(email)) {
-        req.flash('message', 'error: Please enter a valid email address');
-        return res.redirect('/');
+        return res.render('index', { 
+            messages: ['error: Please enter a valid email address'],
+            formData: req.body,
+            csrfToken: req.csrfToken()
+        });
     }
     
     // Phone validation (optional)
-    if (phone && !/^[\d\s\-\(\)]{10,15}$/.test(phone)) {
-        req.flash('message', 'error: Please enter a valid phone number');
-        return res.redirect('/');
+    if (phone && !/^[\d\s()-]{10,15}$/.test(phone)) {
+        return res.render('index', { 
+            messages: ['error: Please enter a valid phone number'],
+            formData: req.body,
+            csrfToken: req.csrfToken()
+        });
     }
     
     // Name validation
     if (!primary_guest_name || primary_guest_name.trim().length === 0 || primary_guest_name.length > 100) {
-        req.flash('message', 'error: Please enter a valid name (max 100 characters)');
-        return res.redirect('/');
+        return res.render('index', { 
+            messages: ['error: Please enter a valid name (max 100 characters)'],
+            formData: req.body,
+            csrfToken: req.csrfToken()
+        });
     }
     
     // Sanitize inputs
@@ -148,78 +144,85 @@ const validateRSVP = (req, res, next) => {
     next();
 };
 
-// Apply rate limiting to RSVP route only in production
-if (process.env.NODE_ENV === 'production') {
-    app.post('/rsvp', limiter, validateRSVP, async (req, res) => {
-        const { email, phone, primary_guest_name, secondary_guest_name, additional_info } = req.body;
+// Set EJS as the view engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// Routes
+app.get('/', (req, res) => {
+    const messages = req.flash('message');
+    res.render('index', { 
+        messages,
+        formData: {},
+        csrfToken: req.csrfToken()
+    });
+});
+
+// Handle form submission at root
+app.post('/', process.env.NODE_ENV === 'production' ? limiter : (req, res, next) => next(), validateRSVP, async (req, res) => {
+    const { 
+        email, 
+        phone, 
+        primary_guest_name, 
+        secondary_guest_name, 
+        additional_info,
+        'need-lodging': needLodging,
+        'willing-to-volunteer': willingToVolunteer,
+        volunteer
+    } = req.body;
+    
+    try {
+        console.log('Attempting to insert RSVP:', { 
+            email, 
+            phone, 
+            primary_guest_name, 
+            secondary_guest_name, 
+            additional_info,
+            needLodging,
+            willingToVolunteer,
+            volunteer
+        });
         
-        try {
-            console.log('Attempting to insert RSVP:', { email, phone, primary_guest_name, secondary_guest_name, additional_info });
+        const { data, error } = await supabase
+            .from('rsvps')
+            .insert([
+                { 
+                    email,
+                    phone: phone || null,
+                    primary_guest_name,
+                    secondary_guest_name: secondary_guest_name || null,
+                    additional_info: additional_info || null,
+                    needs_lodging: needLodging === 'on',
+                    willing_to_volunteer: willingToVolunteer === 'on',
+                    volunteer_info: volunteer || null
+                }
+            ])
+            .select();
             
-            const { data, error } = await supabase
-                .from('rsvps')
-                .insert([
-                    { 
-                        email,
-                        phone: phone || null,
-                        primary_guest_name,
-                        secondary_guest_name: secondary_guest_name || null,
-                        additional_info: additional_info || null
-                    }
-                ])
-                .select();
-                
-            if (error) {
-                console.error('Supabase insert error:', error);
-                req.flash('message', 'error: An error occurred while saving your RSVP. Please try again.');
-                return res.redirect('/');
-            }
-            
-            console.log('Successfully inserted RSVP:', data);
-            req.flash('message', 'Thank you for your RSVP!');
-        } catch (err) {
-            console.error('Error in RSVP submission:', err);
-            req.flash('message', 'error: An error occurred. Please try again.');
+        if (error) {
+            console.error('Supabase insert error:', error);
+            return res.render('index', { 
+                messages: ['error: An error occurred while saving your RSVP. Please try again.'],
+                formData: req.body,
+                csrfToken: req.csrfToken()
+            });
         }
         
-        res.redirect('/');
-    });
-} else {
-    app.post('/rsvp', validateRSVP, async (req, res) => {
-        const { email, phone, primary_guest_name, secondary_guest_name, additional_info } = req.body;
-        
-        try {
-            console.log('Attempting to insert RSVP:', { email, phone, primary_guest_name, secondary_guest_name, additional_info });
-            
-            const { data, error } = await supabase
-                .from('rsvps')
-                .insert([
-                    { 
-                        email,
-                        phone: phone || null,
-                        primary_guest_name,
-                        secondary_guest_name: secondary_guest_name || null,
-                        additional_info: additional_info || null
-                    }
-                ])
-                .select();
-                
-            if (error) {
-                console.error('Supabase insert error:', error);
-                req.flash('message', 'error: An error occurred while saving your RSVP. Please try again.');
-                return res.redirect('/');
-            }
-            
-            console.log('Successfully inserted RSVP:', data);
-            req.flash('message', 'Thank you for your RSVP!');
-        } catch (err) {
-            console.error('Error in RSVP submission:', err);
-            req.flash('message', 'error: An error occurred. Please try again.');
-        }
-        
-        res.redirect('/');
-    });
-}
+        console.log('Successfully inserted RSVP:', data);
+        return res.render('index', {
+            messages: ['Thank you for your RSVP!'],
+            formData: {},
+            csrfToken: req.csrfToken()
+        });
+    } catch (err) {
+        console.error('Error in RSVP submission:', err);
+        return res.render('index', { 
+            messages: ['error: An error occurred. Please try again.'],
+            formData: req.body,
+            csrfToken: req.csrfToken()
+        });
+    }
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {

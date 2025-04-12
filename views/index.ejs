@@ -181,6 +181,43 @@
 			background-color: #dff0d8;
 			color: #3c763d;
 			border: 1px solid #d6e9c6;
+			text-align: center;
+			padding: 20px;
+			margin: 20px 0;
+			border-radius: 8px;
+			font-size: 1.2em;
+		}
+
+		.success-state .rsvp-section {
+			display: none;
+		}
+
+		.checkbox-group {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		.checkbox-group input[type="checkbox"] {
+			width: auto;
+			margin: 0;
+		}
+
+		.checkbox-group label {
+			margin: 0;
+			cursor: pointer;
+		}
+
+		.hidden {
+			display: none;
+		}
+
+		#volunteer-details {
+			margin-top: 10px;
+		}
+
+		#volunteer-details textarea {
+			margin-top: 5px;
 		}
 
 		.required::after {
@@ -226,29 +263,10 @@
 
 		<div class="detail-block">
 			<h2>What is going on?</h2>
-			<p>We are getting married!</p>
-		</div>
-
-		<div class="detail-block">
-			<h2>When is it happening?</h2>
-			<ol class="itinerary-list">
-				<li value="3:00&nbsp;PM">Gates Open - Welcome!</li>
-				<li value="4:00&nbsp;PM">Marriage Ceremony</li>
-				<li value="5:00&nbsp;PM">Reception, Dinner and Drinks</li>
-				<li value="6:00&nbsp;PM">Party time!</li>
-				<li value="10:00&nbsp;PM">The End - You don't have to go home, but you can't stay here!</li>
-			</ol>
-		</div>
-
-		<div class="detail-block">
-			<h2>How is this going down?</h2>
-			<ul>
-				<li>Please RSVP!!</li>
-				<li>This is a party for adult humans only - no children or pets, please.</li>
-				<li>Dress code: As formal as you're feeling - anything from basic black to circus stripes!</li>
-				<li>Food &amp; drinks will be provided.</li>
-				<li>Take lots of pictures to share!</li>
-			</ul>
+			<p><strong>Come one, come all, to the greatest two-ring-circus on earth&mdash;</strong></p>
+			<p>The carnival of mssrs. <strong>Matt</strong> &amp; <strong>Skwerl</strong>!</p>
+			<p>Experience big thrills under the big top, witness the sacred ceremony, stuff yourself with the good stuff,
+				and help us celebrate!</p>
 		</div>
 
 		<div class="detail-block">
@@ -262,65 +280,140 @@
 				src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2782.2773522567204!2d-121.4251829231866!3d45.78567097108101!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x54961386659c2631%3A0x2b76d76096756485!2s821%20Snowden%20Rd%2C%20White%20Salmon%2C%20WA%2098672!5e0!3m2!1sen!2sus!4v1744059113147!5m2!1sen!2sus"
 				class="venue-map" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
 		</div>
+
+		<div class="detail-block">
+			<h2>When is it happening?</h2>
+			<p style="font-size: 1.5em;text-align: center;text-decoration: underline; padding-bottom: 20px;">
+				<strong>Saturday September 13th, 2025</strong>
+			</p>
+			<ol class="itinerary-list">
+				<li value="3:00&nbsp;PM">Gates Open - Welcome!</li>
+				<li value="4:00&nbsp;PM">Marriage Ceremony</li>
+				<li value="5:00&nbsp;PM">Reception, Dinner and Drinks</li>
+				<li value="6:00&nbsp;PM">Party time!</li>
+				<li value="10:00&nbsp;PM">It's over, go home!!!</li>
+			</ol>
+		</div>
+
+		<div class="detail-block">
+			<h2>How does this work?</h2>
+			<ul>
+				<li>Please RSVP!!</li>
+				<li>This is a party for <u>adult humans only</u>; No children or pets, please.</li>
+				<li>Dress code: As formal as you're feeling&ndash;anything from basic black to circus stripes!</li>
+				<li>Food &amp; drinks will be provided.</li>
+				<li>Take lots of pictures to share!</li>
+			</ul>
+		</div>
+
+
 	</div>
 
-	<div class="rsvp-section">
-		<h2>Who is coming?</h2>
+	<% if (messages && messages.length> 0) { %>
+		<div class="flash-message <%= messages[0].includes('error') ? 'error' : 'success' %>" id="flash-message">
+			<%= messages[0] %>
+		</div>
+		<% } %>
 
-		<% if (messages && messages.length> 0) { %>
-			<div class="flash-message <%= messages[0].includes('error') ? 'error' : 'success' %>" id="flash-message">
-				<%= messages[0] %>
+			<div class="rsvp-section">
+				<h2>Who is coming?</h2>
+
+				<% if (!messages || !messages.length || messages[0].includes('error')) { %>
+					<div class="rsvp-form">
+						<form method="POST" action="/" id="rsvp-form">
+							<input type="hidden" name="_csrf" value="<%= csrfToken %>">
+							<ol class="form-list">
+
+								<li class="form-row">
+									<div class="form-group">
+										<label for="primary_guest_name" class="required">Who are you?</label>
+										<input type="text" id="primary_guest_name" name="primary_guest_name" required
+											value="<%= formData?.primary_guest_name || '' %>">
+									</div>
+
+									<div class="form-group">
+										<label for="secondary_guest_name">Who is your plus one?</label>
+										<input type="text" id="secondary_guest_name" name="secondary_guest_name"
+											value="<%= formData?.secondary_guest_name || '' %>">
+									</div>
+								</li>
+
+								<li class="form-row">
+									<div class="form-group">
+										<label for="email" class="required">Email Address</label>
+										<input type="email" id="email" name="email" required
+											pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+											title="Please enter a valid email address (e.g., name@example.com)"
+											value="<%= formData?.email || '' %>">
+									</div>
+
+									<div class="form-group">
+										<label for="phone">Phone Number</label>
+										<input type="tel" id="phone" name="phone" placeholder="(555) 555-5555"
+											value="<%= formData?.phone || '' %>">
+									</div>
+								</li>
+
+								<li class="form-group">
+									<div class="checkbox-group">
+										<input type="checkbox" id="need-lodging" name="need-lodging" <%=formData?.['need-lodging']
+											? 'checked' : '' %>>
+										<label for="need-lodging">Need help finding a place to stay?</label>
+									</div>
+								</li>
+
+								<li class="form-group">
+									<div class="checkbox-group">
+										<input type="checkbox" id="willing-to-volunteer" name="willing-to-volunteer"
+											<%=formData?.['willing-to-volunteer'] ? 'checked' : '' %>>
+										<label for="willing-to-volunteer">Willing to volunteer at the event?</label>
+									</div>
+									<div id="volunteer-details" class="hidden">
+										<label for="volunteer">What skills can you offer?</label>
+										<textarea id="volunteer" name="volunteer"
+											placeholder="Show us what you've got!"><%= formData?.volunteer || '' %></textarea>
+									</div>
+								</li>
+
+								<li class="form-group">
+									<label for="additional_info">Anything else we should know?</label>
+									<textarea id="additional_info" name="additional_info"
+										placeholder="Dietary restrictions, accessibility needs, etc?"><%= formData?.additional_info || '' %></textarea>
+								</li>
+
+							</ol>
+
+							<button type="submit">Submit RSVP</button>
+						</form>
+					</div>
+					<% } %>
 			</div>
-			<% } %>
 
-				<form method="POST" action="/rsvp" id="rsvp-form">
-					<input type="hidden" name="_csrf" value="<%= csrfToken %>">
-					<ol class="form-list">
+			<script>
+				document.addEventListener('DOMContentLoaded', function () {
+					const flashMessage = document.getElementById('flash-message');
+					if (flashMessage) {
+						flashMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+						if (!flashMessage.classList.contains('error')) {
+							document.body.classList.add('success-state');
+						}
+					}
 
-						<li class="form-row">
-							<div class="form-group">
-								<label for="primary_guest_name" class="required">Who Are You?</label>
-								<input type="text" id="primary_guest_name" name="primary_guest_name" required>
-							</div>
+					// Handle volunteer checkbox toggle
+					const volunteerCheckbox = document.getElementById('willing-to-volunteer');
+					const volunteerDetails = document.getElementById('volunteer-details');
 
-							<div class="form-group">
-								<label for="secondary_guest_name">Who is your plus one?</label>
-								<input type="text" id="secondary_guest_name" name="secondary_guest_name">
-							</div>
-						</li>
+					// Initial state
+					volunteerDetails.classList.toggle('hidden', !volunteerCheckbox.checked);
 
-						<li class="form-group">
-							<label for="additional_info">Anything else we should know?</label>
-							<textarea id="additional_info" name="additional_info"
-								placeholder="Dietary restrictions, accessibility needs, or any other information you'd like to share"></textarea>
-						</li>
-
-						<li class="form-row">
-							<div class="form-group">
-								<label for="email" class="required">Email Address</label>
-								<input type="email" id="email" name="email" required>
-							</div>
-
-							<div class="form-group">
-								<label for="phone">Phone Number</label>
-								<input type="tel" id="phone" name="phone" placeholder="(555) 555-5555">
-							</div>
-						</li>
-
-					</ol>
-
-					<button type="submit">Submit RSVP</button>
-				</form>
-	</div>
-
-	<script>
-		document.addEventListener('DOMContentLoaded', function () {
-			const flashMessage = document.getElementById('flash-message');
-			if (flashMessage) {
-				flashMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
-			}
-		});
-	</script>
+					volunteerCheckbox.addEventListener('change', function () {
+						volunteerDetails.classList.toggle('hidden', !this.checked);
+						if (!this.checked) {
+							document.getElementById('volunteer').value = ''; // Clear textarea when hidden
+						}
+					});
+				});
+			</script>
 </body>
 
 </html>
